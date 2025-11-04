@@ -53,6 +53,16 @@ beforeAll(async () => {
   // Create test app
   app = express();
   app.use(express.json());
+
+  // Set cookies for authentication (since middleware reads from cookies)
+  app.use((req, res, next) => {
+    if (req.headers.authorization) {
+      const token = req.headers.authorization.split(' ')[1];
+      req.cookies = { token };
+    }
+    next();
+  });
+
   app.use('/api/products', productRoutes);
 
   // Create test users
@@ -75,15 +85,6 @@ beforeAll(async () => {
   // Generate tokens
   token = jwt.sign({ userId: testUser._id, role: testUser.role }, process.env.JWT_SECRET || 'testsecret');
   adminToken = jwt.sign({ userId: adminUser._id, role: adminUser.role }, process.env.JWT_SECRET || 'testsecret');
-
-  // Set cookies for authentication (since middleware reads from cookies)
-  app.use((req, res, next) => {
-    if (req.headers.authorization) {
-      const token = req.headers.authorization.split(' ')[1];
-      req.cookies = { token };
-    }
-    next();
-  });
 });
 
 beforeEach(async () => {

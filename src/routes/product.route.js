@@ -3,7 +3,7 @@ const multer = require("multer");
 const { authenticateToken } = require("../middlewares/auth.middleware");
 const { productValidator } = require("../validators/product.validator");
 const { handleValidationErrors } = require("../validators/validate");
-const { createProduct } = require("../controllers/product.controller");
+const { createProduct, getProducts } = require("../controllers/product.controller");
 
 const router = express.Router();
 
@@ -23,6 +23,9 @@ const upload = multer({
     }
   },
 });
+
+// GET /api/products - Get products (public)
+router.get("/", getProducts);
 
 // POST /api/products - Create product
 router.post(

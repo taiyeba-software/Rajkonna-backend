@@ -6,33 +6,31 @@ const productSchema = new mongoose.Schema({
     required: true,
     trim: true,
   },
+  description: {
+    type: String,
+    default: '',
+  },
   price: {
     type: Number,
     required: true,
-    min: 0,
   },
   stock: {
     type: Number,
     required: true,
-    min: 0,
   },
   category: {
     type: String,
     required: true,
-    trim: true,
   },
   images: [{
-    url: {
-      type: String,
-      required: true,
-    },
-    filename: {
-      type: String,
-      required: true,
-    },
+    url: String,
+    filename: String,
   }],
 }, {
   timestamps: true,
 });
+
+// Create compound text index for search
+productSchema.index({ name: "text", description: "text", category: "text" });
 
 module.exports = mongoose.model('Product', productSchema);
