@@ -22,6 +22,11 @@ const productSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  status: {
+    type: String,
+    enum: ['active', 'archived'],
+    default: 'active'
+  },
   images: [{
     url: String,
     filename: String,

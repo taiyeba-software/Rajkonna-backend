@@ -5,6 +5,7 @@ const { MongoMemoryServer } = require('mongodb-memory-server');
 const jwt = require('jsonwebtoken');
 
 // Mock multer
+let mockBody = {};
 jest.mock('multer', () => {
   const multer = () => ({
     array: jest.fn(() => (req, res, next) => {
@@ -19,6 +20,7 @@ jest.mock('multer', () => {
           size: 1024,
         },
       ];
+      req.body = mockBody;
       next();
     }),
   });
@@ -63,6 +65,63 @@ beforeAll(async () => {
     next();
   });
 
+  // Mock authenticateToken middleware to set req.user and req.cookies
+  app.use('/api/products', (req, res, next) => {
+    // Parse cookies from various sources
+    let token = null;
+    if (req.cookies && req.cookies.token) {
+      token = req.cookies.token;
+    } else if (req.headers.cookie) {
+      const cookies = req.headers.cookie.split(';').reduce((acc, cookie) => {
+        const [key, value] = cookie.trim().split('=');
+        acc[key] = value;
+        return acc;
+      }, {});
+      token = cookies.token;
+    } else if (req.headers['set-cookie']) {
+      const cookies = req.headers['set-cookie'].split(';').reduce((acc, cookie) => {
+        const [key, value] = cookie.trim().split('=');
+        acc[key] = value;
+        return acc;
+      }, {});
+      token = cookies.token;
+    } else if (req.headers['cookie']) {
+      // Handle supertest cookie setting
+      const cookieString = req.headers['cookie'];
+      const cookies = cookieString.split(';').reduce((acc, cookie) => {
+        const [key, value] = cookie.trim().split('=');
+        acc[key] = value;
+        return acc;
+      }, {});
+      token = cookies.token;
+    } else if (req.headers['Cookie']) {
+      // Handle supertest cookie setting with capital C
+      const cookieString = req.headers['Cookie'];
+      const cookies = cookieString.split(';').reduce((acc, cookie) => {
+        const [key, value] = cookie.trim().split('=');
+        acc[key] = value;
+        return acc;
+      }, {});
+      token = cookies.token;
+    }
+
+    if (token) {
+      req.cookies = req.cookies || {};
+      req.cookies.token = token;
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+        req.user = decoded;
+        next();
+      } catch (error) {
+        // Token invalid, proceed without user
+        next();
+      }
+    } else {
+      // No token, proceed without user
+      next();
+    }
+  });
+
   app.use('/api/products', productRoutes);
 
   // Create test users
@@ -83,8 +142,8 @@ beforeAll(async () => {
   await adminUser.save();
 
   // Generate tokens
-  token = jwt.sign({ userId: testUser._id, role: testUser.role }, process.env.JWT_SECRET || 'testsecret');
-  adminToken = jwt.sign({ userId: adminUser._id, role: adminUser.role }, process.env.JWT_SECRET || 'testsecret');
+  token = jwt.sign({ userId: testUser._id, role: testUser.role }, process.env.JWT_SECRET || 'fallback_secret');
+  adminToken = jwt.sign({ userId: adminUser._id, role: adminUser.role }, process.env.JWT_SECRET || 'fallback_secret');
 });
 
 beforeEach(async () => {
@@ -95,18 +154,17 @@ describe('POST /api/products', () => {
   it('should create product successfully for admin user (201)', async () => {
     const productData = {
       name: 'Test Product',
-      price: 29.99,
+      description: 'Test description',
+      price: 100,
       stock: 10,
       category: 'Electronics',
     };
 
+    mockBody = productData;
+
     const response = await request(app)
       .post('/api/products')
-      .set('Authorization', `Bearer ${adminToken}`)
-      .field('name', productData.name)
-      .field('price', productData.price.toString())
-      .field('stock', productData.stock.toString())
-      .field('category', productData.category)
+      .set('Cookie', `token=${adminToken}`)
       .attach('images', Buffer.from('mock image'), 'test-image.jpg');
 
     expect(response.status).toBe(201);
@@ -119,18 +177,17 @@ describe('POST /api/products', () => {
   it('should return 403 for unauthorized user (not admin/seller)', async () => {
     const productData = {
       name: 'Test Product',
-      price: 29.99,
+      description: 'Test description',
+      price: 100,
       stock: 10,
       category: 'Electronics',
     };
 
+    mockBody = productData;
+
     const response = await request(app)
       .post('/api/products')
-      .set('Authorization', `Bearer ${token}`)
-      .field('name', productData.name)
-      .field('price', productData.price.toString())
-      .field('stock', productData.stock.toString())
-      .field('category', productData.category)
+      .set('Cookie', `token=${token}`)
       .attach('images', Buffer.from('mock image'), 'test-image.jpg');
 
     expect(response.status).toBe(403);
@@ -138,12 +195,17 @@ describe('POST /api/products', () => {
   });
 
   it('should return 400 for validation errors (missing required fields)', async () => {
+    const productData = {
+      price: 29.99,
+      stock: 10,
+      // Missing name and category
+    };
+
+    mockBody = productData;
+
     const response = await request(app)
       .post('/api/products')
-      .set('Authorization', `Bearer ${adminToken}`)
-      .field('price', '29.99')
-      .field('stock', '10')
-      // Missing name and category
+      .set('Cookie', `token=${adminToken}`)
       .attach('images', Buffer.from('mock image'), 'test-image.jpg');
 
     expect(response.status).toBe(400);
@@ -159,13 +221,11 @@ describe('POST /api/products', () => {
       category: 'Electronics',
     };
 
+    mockBody = productData;
+
     const response = await request(app)
       .post('/api/products')
-      .set('Authorization', `Bearer ${adminToken}`)
-      .field('name', productData.name)
-      .field('price', productData.price.toString())
-      .field('stock', productData.stock.toString())
-      .field('category', productData.category)
+      .set('Cookie', `token=${adminToken}`)
       .attach('images', Buffer.from('mock image'), 'test-image.jpg');
 
     expect(response.status).toBe(400);

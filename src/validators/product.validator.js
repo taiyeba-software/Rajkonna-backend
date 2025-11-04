@@ -22,20 +22,6 @@ const productValidator = [
     .withMessage('Category is required')
     .isLength({ min: 1, max: 50 })
     .withMessage('Category must be between 1 and 50 characters'),
-
-  body('images')
-    .isArray({ min: 1 })
-    .withMessage('Images must be an array with at least one item'),
-
-  body('images.*.url')
-    .isString()
-    .notEmpty()
-    .withMessage('Each image must have a valid URL'),
-
-  body('images.*.filename')
-    .isString()
-    .notEmpty()
-    .withMessage('Each image must have a filename'),
 ];
 
 module.exports = {

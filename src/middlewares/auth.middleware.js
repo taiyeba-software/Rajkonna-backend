@@ -3,7 +3,7 @@ const redisService = require('../services/redis.service');
 
 const authenticateToken = async (req, res, next) => {
   try {
-    const token = req.cookies.token;
+    const token = req.cookies?.token;
 
     if (!token) {
       return res.status(401).json({ message: 'Access token required' });

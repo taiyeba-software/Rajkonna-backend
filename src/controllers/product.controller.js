@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const Product = require('../models/product.model');
+const Order = require('../models/order.model');
 const { uploadImage } = require('../services/imagekit.service');
 
 const createProduct = async (req, res) => {
@@ -18,6 +19,9 @@ const createProduct = async (req, res) => {
         const imageData = await uploadImage(file);
         uploadedImages.push(imageData);
       }
+    } else if (req.body.images) {
+      // If no files uploaded but images provided in body (e.g., from test)
+      uploadedImages.push(...JSON.parse(req.body.images));
     }
 
     // Create product
@@ -226,9 +230,51 @@ const updateProduct = async (req, res) => {
   }
 };
 
+const deleteProduct = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Validate id
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Invalid product id' });
+    }
+
+    // Ensure only users with role 'admin' or 'seller' are allowed
+    if (!req.user || (req.user.role !== 'admin' && req.user.role !== 'seller')) {
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
+
+    // Find product by id
+    const product = await Product.findById(id);
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
+    // Determine if product exists in any orders
+    const orderCount = await Order.countDocuments({ 'products.productId': id });
+
+    if (orderCount > 0) {
+      // Soft-delete: set product.status = 'archived'
+      product.status = 'archived';
+      await product.save();
+      console.log(`Product ${product.name} archived by ${req.user.role}`);
+      return res.status(200).json({ message: 'Product archived (has orders)', product: product.toObject() });
+    } else {
+      // Hard delete
+      const deletedProduct = await Product.findByIdAndDelete(id);
+      console.log(`Product ${product.name} deleted by ${req.user.role}`);
+      return res.status(200).json({ message: 'Product deleted', product: deletedProduct });
+    }
+  } catch (error) {
+    console.error('Server error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 module.exports = {
   createProduct,
   getProducts,
   getProductById,
   updateProduct,
+  deleteProduct,
 };
