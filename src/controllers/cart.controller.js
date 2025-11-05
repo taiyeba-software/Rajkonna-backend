@@ -319,9 +319,143 @@ const updateCartItem = async (req, res) => {
   }
 };
 
+const removeCartItem = async (req, res) => {
+  try {
+    const { productId } = req.params;
+
+    // Optional double-safety: If not mongoose.isValidObjectId(productId) return res.status(400).json({ message: 'Invalid product ID' });
+    if (!mongoose.Types.ObjectId.isValid(productId)) {
+      return res.status(400).json({ message: 'Invalid product ID' });
+    }
+
+    // Find user's cart
+    const cart = await Cart.findOne({ user: req.user.userId }).populate('items.product');
+    if (!cart) {
+      return res.status(404).json({ message: 'Cart not found' });
+    }
+
+    // Find index of item
+    const idx = cart.items.findIndex(it => it.product._id.toString() === productId.toString());
+    if (idx === -1) {
+      return res.status(404).json({ message: 'Product not found in cart' });
+    }
+
+    // Remove the item
+    cart.items.splice(idx, 1);
+
+    // Recompute totals identically to getCart logic
+    const warnings = [];
+    const items = [];
+    let subtotal = 0;
+
+    for (const item of cart.items) {
+      if (item.product) {
+        // Fetch latest product price from DB
+        const prod = await Product.findById(item.product._id).lean();
+        if (prod) {
+          const price = Number(prod.price);
+          const qty = Number(item.qty);
+          const lineTotal = Math.round(price * qty * 100) / 100;
+          items.push({
+            product: {
+              _id: prod._id,
+              name: prod.name,
+              price
+            },
+            qty,
+            lineTotal
+          });
+          subtotal += lineTotal;
+        } else {
+          warnings.push(`Product ${item.product._id} not found, skipped`);
+        }
+      } else {
+        warnings.push(`Invalid product reference, skipped`);
+      }
+    }
+
+    // Delivery charge calculation
+    const DELIVERY_CHARGE = process.env.DELIVERY_CHARGE ? Number(process.env.DELIVERY_CHARGE) : 50;
+    const FREE_DELIVERY_THRESHOLD = process.env.FREE_DELIVERY_THRESHOLD ? Number(process.env.FREE_DELIVERY_THRESHOLD) : 1000;
+    const deliveryCharge = subtotal >= FREE_DELIVERY_THRESHOLD ? 0 : DELIVERY_CHARGE;
+
+    // Discount calculation
+    const discountPercent = Math.floor(Math.random() * 11) + 5; // 5-15
+    const discountAmount = Math.round(subtotal * (discountPercent / 100) * 100) / 100;
+
+    // Total payable
+    let totalPayable = subtotal + deliveryCharge - discountAmount;
+    totalPayable = Math.max(0, totalPayable);
+    totalPayable = Math.round(totalPayable * 100) / 100;
+
+    // Save the cart
+    await cart.save();
+
+    // Return response
+    res.status(200).json({
+      items,
+      subtotal: Math.round(subtotal * 100) / 100,
+      deliveryCharge,
+      discountPercent,
+      discountAmount,
+      totalPayable,
+      warnings
+    });
+  } catch (error) {
+    console.error('Remove cart item error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+
+
+const clearCart = async (req, res) => {
+  try {
+    const cart = await Cart.findOne({ user: req.user.userId }).populate('items.product');
+
+    if (!cart) {
+      return res.status(404).json({ message: 'Cart not found' });
+    }
+
+    cart.items = [];
+    await cart.save();
+
+    // Recompute totals like getCart
+    const subtotal = 0;
+    const deliveryCharge = process.env.DELIVERY_CHARGE ? Number(process.env.DELIVERY_CHARGE) : 50;
+    let discountPercent;
+    if (req.query.discount && !isNaN(req.query.discount)) {
+      const discountVal = Number(req.query.discount);
+      if (discountVal >= 0 && discountVal <= 100) {
+        discountPercent = discountVal;
+      } else {
+        discountPercent = Math.floor(Math.random() * 11) + 5; // 5-15
+      }
+    } else {
+      discountPercent = Math.floor(Math.random() * 11) + 5; // 5-15
+    }
+    const discountAmount = 0; // since subtotal is 0
+    const totalPayable = 0;
+
+    res.status(200).json({
+      cart: cart.toObject(),
+      subtotal,
+      deliveryCharge,
+      discountPercent,
+      discountAmount,
+      totalPayable
+    });
+  } catch (error) {
+    console.error('Clear cart error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 module.exports = {
   addItemToCart,
   syncCart,
   getCart,
   updateCartItem,
+  removeCartItem,
+  clearCart,
 };

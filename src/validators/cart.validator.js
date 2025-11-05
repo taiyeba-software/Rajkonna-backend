@@ -30,8 +30,15 @@ const updateCartItemValidator = [
     .withMessage('Quantity must be an integer'),
 ];
 
+const removeCartItemValidator = [
+  param('productId')
+    .isMongoId()
+    .withMessage('Invalid product ID')
+];
+
 module.exports = {
   addItemValidator,
   syncCartValidator,
   updateCartItemValidator,
+  removeCartItemValidator,
 };

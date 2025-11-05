@@ -141,6 +141,10 @@ rajkonna-backend/
 5. Run tests: `npm test`
 6. Submit a pull request
 
+## Quick Commands
+
+If user wants to check the test cases, run `npm test`. To open server, run `npx nodemon server.js`.
+
 ## License
 
 This project is licensed under the ISC License.
