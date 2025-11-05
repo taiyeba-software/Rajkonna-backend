@@ -1,7 +1,7 @@
 // server.js
 require("dotenv").config(); // 🔑 .env file থেকে secret variables load করবে
 const app = require("./src/app"); // তোমার main express app
-const connectDB = require("./src/db/connect"); // MongoDB connect function
+const connectDB = require("./src/db/db"); // MongoDB connect function
 const redisService = require("./src/services/redis.service"); // Redis service
 
 const PORT = process.env.PORT || 5000; // Default port 5000

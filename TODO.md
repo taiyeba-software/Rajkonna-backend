@@ -1,5 +1,5 @@
-# TODO: Update Product Routes for Delete Functionality
+# TODO: Implement getCart Function
 
-- [x] Update import in src/routes/product.routes.js to include deleteProduct from '../controllers/product.controller'
-- [x] Add router.delete('/:id', authenticateToken, deleteProduct); after existing routes
-- [x] Verify the file has all routes intact and export is unchanged
+- [x] Append `getCart` async function to `src/controllers/cart.controller.js` with full logic (authentication, cart retrieval, price recomputation, calculations, response)
+- [x] Update `module.exports` in `src/controllers/cart.controller.js` to include `getCart`
+- [x] Update `src/routes/cart.routes.js` to import `getCart` and add GET / route
