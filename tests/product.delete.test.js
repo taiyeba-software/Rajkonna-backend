@@ -104,11 +104,15 @@ describe('DELETE /api/products/:id', () => {
     // Create an order referencing product P
     const order = new Order({
       user: regularUser._id,
-      products: [{
-        productId: product._id,
-        quantity: 1,
-        price: product.price,
+      items: [{
+        product: product._id,
+        qty: 1,
+        priceAt: product.price,
       }],
+      subtotal: product.price,
+      deliveryCharge: 0,
+      discountPercent: 0,
+      discountAmount: 0,
       total: product.price,
     });
     await order.save();

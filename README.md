@@ -104,6 +104,7 @@ IMAGEKIT_URL_ENDPOINT=https://ik.imagekit.io/your_imagekit_id
 
 ### Orders
 - `GET /api/orders` - Get user orders
+- `GET /api/orders/:id` - Get order by ID
 - `POST /api/orders` - Create new order
 
 ### Cart

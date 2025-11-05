@@ -6,24 +6,44 @@ const orderSchema = new mongoose.Schema({
     ref: 'User',
     required: true,
   },
-  products: [{
-    productId: {
+  items: [{
+    product: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Product',
-      required: true,
+      required: true
     },
-    quantity: {
+    qty: {
       type: Number,
-      required: true,
+      required: true
     },
-    price: {
+    priceAt: {
       type: Number,
-      required: true,
-    },
+      required: true
+    }
   }],
+  subtotal: {
+    type: Number,
+    required: true,
+  },
+  deliveryCharge: {
+    type: Number,
+    required: true,
+  },
+  discountPercent: {
+    type: Number,
+    required: true,
+  },
+  discountAmount: {
+    type: Number,
+    required: true,
+  },
   total: {
     type: Number,
     required: true,
+  },
+  paymentMethod: {
+    type: String,
+    default: null,
   },
   status: {
     type: String,

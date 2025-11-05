@@ -251,7 +251,7 @@ const deleteProduct = async (req, res) => {
     }
 
     // Determine if product exists in any orders
-    const orderCount = await Order.countDocuments({ 'products.productId': id });
+    const orderCount = await Order.countDocuments({ 'items.product': id });
 
     if (orderCount > 0) {
       // Soft-delete: set product.status = 'archived'

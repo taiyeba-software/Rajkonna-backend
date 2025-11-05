@@ -1,12 +1,12 @@
-# TODO: Implement DELETE /api/cart
+# TODO
 
-## Steps to Complete
-- [x] Add `clearCart` async function to `src/controllers/cart.controller.js`
-- [x] Update `src/routes/cart.routes.js` to import `clearCart` and add DELETE route
-- [x] Create `tests/cart.clear.test.js` with Jest tests for the endpoint
-- [x] Run tests to verify implementation
+## Completed Tasks
+- [x] Add getOrderValidator to src/validators/order.validator.js
+- [x] Add getOrderById function to src/services/order.service.js
+- [x] Add getOrder function to src/controllers/order.controller.js
+- [x] Add GET /:id route to src/routes/order.routes.js
 
-## Details
-- clearCart: Find cart with populate, 404 if not found, clear items, save, recompute totals (all 0), return 200 with cart.toObject() and totals.
-- Route: router.delete('/', authenticateToken, clearCart);
-- Tests: auth required, 404 if no cart, clears cart successfully, discount query param.
+## Pending Tasks
+- [x] Test the implementation
+- [x] Handle any edge cases or bugs
+- [x] Create comprehensive tests for GET /api/orders/:id
