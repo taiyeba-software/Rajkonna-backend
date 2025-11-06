@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "build": "npm install",
+    "start": "node server.js"
   },
   "keywords": [],
   "author": "",
