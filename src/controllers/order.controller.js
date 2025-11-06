@@ -1,5 +1,6 @@
 const Order = require('../models/order.model');
 const orderService = require('../services/order.service');
+const User = require('../models/user.model');
 
 async function listOrders(req, res) {
   try {
@@ -98,8 +99,17 @@ async function getOrderById(req, res) {
 
 async function createOrder(req, res) {
   try {
-    const userId = req.user.userId;
+    const userId = req.user.userId || req.user.id;
     const { paymentMethod } = req.body;
+
+    // If shippingAddress missing or empty, fall back to user's saved address and phone
+    if (!req.body.shippingAddress || Object.keys(req.body.shippingAddress).length === 0) {
+      const user = await User.findById(userId).select('address phone').lean();
+      if (user) {
+        req.body.shippingAddress = user.address || {};
+        req.body.phone = req.body.phone || user.phone || '';
+      }
+    }
 
     const order = await orderService.createOrder(userId, paymentMethod);
     return res.status(201).json({ message: 'Order created', order });
