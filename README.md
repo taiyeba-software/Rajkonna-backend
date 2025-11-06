@@ -5,8 +5,9 @@ A Node.js backend API for the Rajkonna e-commerce platform, built with Express.j
 ## Features
 
 - User authentication (register, login, logout) with JWT
+- User profile management (get and update profile)
 - Product CRUD operations
-- Order management
+- Order management (with address fallback for order creation)
 - Cart functionality
 - Image upload and management with ImageKit
 - Redis caching
